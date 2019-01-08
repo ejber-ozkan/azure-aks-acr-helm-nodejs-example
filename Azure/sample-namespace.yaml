@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: example-nodejs-dev-ns
+  labels:
+    environment: dev
+    name: example-nodejs-ns
+  annotations:
+    owner: ejber-ozkan
+    contact: Ejber Ozkan 
+    business-unit: BaggyWrinkle
+
+---
+kind: LimitRange
+apiVersion: v1
+metadata:
+  name: example-nodejs-dev-limit
+  namespace: example-nodejs-dev-ns
+spec:
+  limits:
+  - type: Pod
+    max:
+      cpu: 800m
+      memory: 2Gi
+    min:
+      cpu: 200m
+      memory: 64Mi
+  - type: Container
+    default:
+      cpu: 400m
+      memory: 350Mi
+    defaultRequest:
+      cpu: 200m
+      memory: 64Mi
+    max:
+      cpu: 400m
+      memory: 2Gi
+    min:
+      cpu: 100m
+      memory: 64Mi
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: example-nodejs-dev-quota
+  namespace: example-nodejs-dev-ns
+spec:
+  hard:
+    persistentvolumeclaims: "3"
+    requests.storage: 5Gi
+    pods: "20"
+    replicationcontrollers: "20"
+    services: "20"
+    services.loadbalancers: "20"
+    resourcequotas: "1"
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "6"
+    limits.memory: 4Gi
+    configmaps: "20"
+    secrets: "100"
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: example-nodejs-dev-ns
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Allows ingress from internet to web pods for browser / app access
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-webapp-ingress
+  namespace: example-nodejs-dev-ns
+spec:
+  podSelector: {}
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: 3000
+    from: []
+  policyTypes:
+  - Ingress
+---
+# Allows pods to communicate
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-pod-communication
+  namespace: example-nodejs-dev-ns
+spec:
+  podSelector: {}
+  ingress:
+  - from:
+     - namespaceSelector:
+        matchLabels:
+          name: example-nodejs-dev-ns
+  egress:
+  - to:
+     - namespaceSelector:
+        matchLabels:
+          name: example-nodejs-dev-ns
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Allows pods to access DNS
+# nice to have requirement
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-dns-egress
+  namespace: example-nodejs-dev-ns
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+---
