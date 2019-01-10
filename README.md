@@ -55,7 +55,7 @@ Now lets tag the Docker Image also
 docker tag nodejs-example-app_web:latest
 ```
 
-Ok so we have built an docker image based on the [DockerFile](DockerFile) in this repo (You can play with this file locally again to add more items) , started a local running version of the application and looked at it using a local browser.
+Ok so we have built an docker image based on the [Dockerfile](Dockerfile) in this repo (You can play with this file locally again to add more items) , started a local running version of the application and looked at it using a local browser.
 
 # Azure Container registry 
 We need to now store our freshly baked image somewhere so that it can be retrieved from and deployed into a container service.For that we will use the Azure Container Registry (ACR)
