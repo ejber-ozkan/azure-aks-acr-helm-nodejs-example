@@ -216,7 +216,7 @@ Great now we need to bootstrap and add some additional services into the new clu
 
 Before you can deploy Helm in an RBAC-enabled AKS cluster, you need a service account and role binding for the Tiller service. For more information on securing Helm / Tiller in an RBAC enabled cluster, see Tiller, Namespaces, and RBAC. If your AKS cluster is not RBAC enabled, skip this step.
 
-[helm-rbac.yaml](helm-rbac.yaml)
+[helm-rbac.yaml](Azure/helm-rbac.yaml)
 
 ```bash
 kubectl apply -f helm-rbac.yaml
@@ -289,7 +289,7 @@ apply ingress rule (see file [example-nodejs-ingress.yaml](example-nodejs-ingres
 kubectl apply -f example-nodejs-ingress.yaml
 ```
 
-This will simply add the internal rule to allow inbound traffic to flow from nginx external facing port into internal port 3000 on which to service app is running
+This will simply add the internal rule to allow inbound traffic to flow from nginx external facing port into internal port 3000 on which the service app is running
 ```yaml
 ...
           serviceName: nodejs-example-chart-service
