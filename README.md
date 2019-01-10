@@ -1,7 +1,7 @@
 # Example use of Azure Kubernetes Service
 
 ## Objectives
-The aim of this repository is to guide a person into creating a Kubernetes cluster in Asure and deploying and exposing a simple application for the first time.
+The aim of this repository is to guide a person into creating a Kubernetes cluster in Azure and deploying and exposing a simple application for the first time.
 It introduces a number of technologies and presumptions :)
 * Access to a Azure Subscription , with initially *owner* level access
 * Docker Desktop , Docker Compose
