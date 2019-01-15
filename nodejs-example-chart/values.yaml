@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: ndapweureg.azurecr.io/examples/nodejs-example-app
+  repository: nodeappsweureg.azurecr.io/examples/nodejs-example-app
   tag: v3
   pullPolicy: IfNotPresent
   resources:

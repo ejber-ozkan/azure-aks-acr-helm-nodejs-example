@@ -12,8 +12,8 @@ It introduces a number of technologies and presumptions :-)
 
 This probably only works on a Mac or Linux based local machine , although you mileage may vary.
 
-## Docker
-Right lets build our Docker image with our NodeJS sample code.
+## Dockerize NodeJS app
+Right lets build a Docker image from our amazing NodeJS application [code](server.js).
 You'll need Docker (shock!) installed
 If you wish feel free to play with the NodeJS code and HTML and adjust as necessary.
 
@@ -49,15 +49,16 @@ Now lets do the same with docker compose [docker-compose.yaml](docker-compose.ya
 docker-compose -f "docker-compose.yaml" up -d --build
 docker-compose -f "docker-compose.yaml" down
 ```
+Although in this example we will not have multiple container application for this example  , docker-compose will work with one app too.
 
 Now lets tag the Docker Image also
 ```bash
 docker tag nodejs-example-app_web:latest
 ```
 
-Ok so we have built an docker image based on the [Dockerfile](Dockerfile) in this repo (You can play with this file locally again to add more items) , started a local running version of the application and looked at it using a local browser.
+Ok so we have built a docker image based on the [Dockerfile](Dockerfile) in this repo (You can play with this file locally again to add more items to the image if you wish) , started a local running version of the application and looked at it using a local browser.
 
-# Azure Container registry 
+# Azure Container Registry 
 We need to now store our freshly baked image somewhere so that it can be retrieved from and deployed into a container service.For that we will use the Azure Container Registry (ACR)
 
 You'll need to install [azure cli](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
@@ -67,7 +68,7 @@ https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azu
 also this
 https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-aks
 
-### Login
+### Login to Azure
 Example using the Azure CLI to create a service principal:
 
 ```bash
@@ -92,7 +93,7 @@ To sign again in use the Azure CLI :
 az login --service-principal --username APP_ID --password PASSWORD --tenant TENANT_ID
 ```
 
-*OR* shell use the [az_login.bash](az_login.bash.tpl) template and adjust as required)
+*OR* use a shell script ,use the [az_login.bash](az_login.bash.tpl) template , rename to .bash and adjust as required)
 
 ```bash
 
@@ -109,7 +110,7 @@ az account set -s "${AZ_SUBSCRIPTION_ID}" > /dev/null
 Do 'source' your interactive shell , or you'll login with your current active user.
 
 ### Create ACR
-First create an Azure resource group to put the ACR in
+OK now that we can login to Azure through a command line,we can now create an Azure resource group to put the ACR in
 *note* replace ``nodeapps`` name prefix with your own acr name
 
 ```bash
@@ -122,7 +123,14 @@ Next create the actual Azure Container Registry with
 az acr create --resource-group az-nodeapps-nonprod-weu-acr-rg --name nodeappsweureg --sku Basic
 ```
 
-You should be able to test the login
+Notice the naming convention used for resources in azure , its always adviceable to come up with something that makes it as clear as possible on what it does,where it does it , why it does it and for whom.
+Below is one I try to follow usually:
+
+``az-nodeapps-nonprod-weu-acr-rg``
+
+``<cloudprovider-<environment>-<region>-<service>-<resourcetype>``
+
+You should be able to test the login to your new shiny Repository 
 
 ```bash
 az acr login --name nodeappsweureg
@@ -145,7 +153,7 @@ Tag the image for ACR
 docker tag nodejs-example-app_web:latest nodeappsweureg.azurecr.io/examples/nodejs-example-app
 ```
 
-You may need to enable the administrator user account for the ACS that you created.
+You may need to enable the administrator user account for the ACR that you created.
 
 ```bash
 az acr update --name nodeappsweureg --admin-enabled true
@@ -157,7 +165,7 @@ Push your Docker image to the ACR that you created
 docker push nodeappsweureg.azurecr.io/examples/nodejs-example-app
 ```
 
-You should now be able to 'see' and listif your image  in Azure ACR
+You should now be able to 'see' and list if your image  in Azure ACR
 
 ```bash
 az acr show --resource-group az-nodeapps-nonprod-weu-acr-rg --name nodeappsweureg --query "id" --output tsv
@@ -173,29 +181,29 @@ Now we should try and deploy the image into something to run it!
 Using shell cli commands create resource group (notice the naming convention :-) ...)
 
 ```bash
-az group create --name az-nodeapps-nonprod-weu-aks2-rg --location "west europe"
+az group create --name az-nodeapps-nonprod-weu--rg --location "west europe"
 ```
 
 Create AKS cluster inside the group created.
 If you dont use service principal , this command will create one for you ...
 
 ```bash
-az aks create --resource-group az-nodeapps-nonprod-weu-aks2-rg --name az-nodeapps-nonprod-weu-k8s-2 --node-count 1 --enable-addons monitoring --generate-ssh-keys
+az aks create --resource-group az-nodeapps-nonprod-weu-aks-rg --name az-nodeapps-nonprod-weu-k8s-2 --node-count 1 --enable-addons monitoring --generate-ssh-keys
 ```
 
-This will create a 'default' cluster , which is at the moment 1 Node, 2 cores with 7 gig Mem , and (usually) not the latest Kubernetes version , this will take a little bit of time. This command should also add any local SSH Keys to the cluster. Also will create a logAnalytics workspace too.
+This will create a 'default' cluster , which is at the moment 1 Node, 2 cores with 7 gig Memory , and (usually) not the latest Kubernetes version , this will take a little bit of time. This command should also add any local SSH Keys to the cluster. Also will create a logAnalytics workspace too.
 
 Add (merge) credentials to local .kube/config
 
 ```bash
-az aks get-credentials --resource-group az-nodeapps-nonprod-weu-aks2-rg --name az-nodeapps-nonprod-weu-k8s-2
+az aks get-credentials --resource-group az-nodeapps-nonprod-weu-aks-rg --name az-nodeapps-nonprod-weu-k8s-2
 
 ```
 
 See [aks-auth.bash](Azure/aks-auth.bash) for more info.
 
 ```bash
-AKS_RESOURCE_GROUP=az-nodeapps-nonprod-weu-aks2-rg
+AKS_RESOURCE_GROUP=az-nodeapps-nonprod-weu-aks-rg
 AKS_CLUSTER_NAME=az-nodeapps-nonprod-weu-k8s-2
 az aks show --resource-group $AKS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --query "servicePrincipalProfile.clientId" --output tsv
 ```
@@ -233,9 +241,10 @@ Install tiller into your AKS cluster (server side of Helm)
 ```bash
 helm init --service-account tiller
 ```
---- later note to try with TLS
+--- TODO: to try with TLS
 
-Create sample namespace [sample-namespace.yaml](Azure/sample-namespace.yaml)
+### Create namespace
+To create a sample namespace [sample-namespace.yaml](Azure/sample-namespace.yaml)
 
 ```bash
 kubectl apply -f sample-namespace.yaml
@@ -254,12 +263,13 @@ kubectl describe namespace example-nodejs-dev-ns
 kubectl describe limitrange
 ```
 
-To deploy (and delete) application chart....
+### Deploy Chart
+Helm makes it easier for someone to deploy,upgrade and delete helm chart of an application using the giving values in the [values.yaml](nodejs-example-chart/values.yaml)
 
 ```bash
 cd ..
 helm install ./nodejs-example-chart --namespace example-nodejs-dev-ns
-helm delete wobbly-termite
+#helm delete wobbly-termite
 ```
 Note the deployment name 'wobbly-termite' will be different for you
 
@@ -269,7 +279,7 @@ To see events in current namespace (including errors)
 kubectl get events --sort-by=.metadata.creationTimestamp
 ```
 
-To port forward from your AKS cluster and view sample application on a local browser
+To port forward from your AKS cluster and the view sample application on a local browser
 
 ```bash
 kubectl port-forward nodejs-example-chart-deployment-55dfccccf6-wsb9d 3000
@@ -280,21 +290,22 @@ You should see the remote application deployed on AKS and forwarded to your loca
 
 ### Expose the application to the world
 
-We need to create an ingress controller
+To expose the application to the world we need to create an ingress controller that allows inbound traffic from the internet into our cluster and forwards on requests to the application where its running inside the cluster.
 
-There is a helm template already for this that uses the web service nginx
+There is a public helm template already for this that uses the web service nginx
 
 ```bash
 helm install stable/nginx-ingress --namespace kube-system --set controller.replicaCount=2
 ```
 
-check on the deployment (this can take a while)
+We can check on the progress of the deployment (this can take a while as it will generate a resource in Azure)
 
 ```bash
 kubectl get service -l app=nginx-ingress --namespace kube-system
 ```
 
-apply ingress rule (see file [example-nodejs-ingress.yaml](example-nodejs-ingress.yaml))
+We can now apply our rules to allow ingress through and into our applications 
+with Applying an ingress rule (see file [example-nodejs-ingress.yaml](example-nodejs-ingress.yaml))
 
 ```bash
 kubectl apply -f example-nodejs-ingress.yaml
@@ -321,11 +332,11 @@ pruning-goose-nginx-ingress-controller        LoadBalancer   10.0.58.67     x.x.
 pruning-goose-nginx-ingress-default-backend   ClusterIP      10.0.197.160   <none>          80/TCP                       28d
 ```
 
-Eventually there should now be a public IP address in the output from the commands above 
+Eventually there should now be a public available IP address in the output from the commands above 
 you should be able to hit it externally using the IP http://x.x.x.x
 (x value should be a real number )
 
-Finally cheeky way to test connectivity internally , get a shell!
+You can if you wish test connectivity internally , get a shell!
 
 ```bash
 kubectl run -i --tty load-generator --image=busybox /bin/sh
@@ -333,7 +344,7 @@ kubectl run -i --tty load-generator --image=busybox /bin/sh
 kubectl exec -it --tty load-generator-5c4d59d5dd-qczwf -- /bin/sh
 ```
 
-and hit it once or forever ...
+and hit your application internally once or forever , this should pave the way for app to app communications...
 
 ```bash
 while true; do wget -q -O- http://nodejs-example-chart-deployment.example-nodejs-dev-ns.svc.cluster.local; done
