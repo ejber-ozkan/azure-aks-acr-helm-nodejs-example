@@ -19,7 +19,7 @@ If you wish feel free to play with the NodeJS code and HTML and adjust as necess
 
 Run docker build with a tag that you'll remember in this repo that you have already checked out locally (right?).
 
-Replace "nodeapps" with whatever you environment or service is trying to do, Its quite likely this will already be taken :)
+Replace ``nodeapps`` prefix that you see in this doc and in any files in this repo with whatever you environment or service is trying to do, Its quite likely this will already be taken :)
 
 ```bash
 docker build --rm -f "Dockerfile" -t nodejs-example-app:latest .
@@ -110,6 +110,7 @@ Do 'source' your interactive shell , or you'll login with your current active us
 
 ### Create ACR
 First create an Azure resource group to put the ACR in
+*note* replace ``nodeapps`` name prefix with your own acr name
 
 ```bash
 az group create --name az-nodeapps-nonprod-weu-acr-rg --location "West Europe"
@@ -134,8 +135,10 @@ docker login nodeappsweureg.azurecr.io
         Username: nodeappsweureg
         Password:
 ```
+
 ### Docker Tag 
-We need to tag the image so that it can be controlled in ACR 
+We need to tag the image so that it can be controlled in ACR
+
 Tag the image for ACR
 
 ```bash
@@ -154,7 +157,7 @@ Push your Docker image to the ACR that you created
 docker push nodeappsweureg.azurecr.io/examples/nodejs-example-app
 ```
 
-You should now be able to 'see' and list if your image is in Azure ACR
+You should now be able to 'see' and listif your image  in Azure ACR
 
 ```bash
 az acr show --resource-group az-nodeapps-nonprod-weu-acr-rg --name nodeappsweureg --query "id" --output tsv
@@ -162,7 +165,8 @@ az acr show --resource-group az-nodeapps-nonprod-weu-acr-rg --name nodeappsweure
 
 # Azure Kubernetes Service
 
-Right, now we should try and deploy the image into something to run it!
+Right! 
+Now we should try and deploy the image into something to run it!
 
 ## To deploy an Azure AKS Cluster
 
@@ -237,6 +241,13 @@ Create sample namespace [sample-namespace.yaml](Azure/sample-namespace.yaml)
 kubectl apply -f sample-namespace.yaml
 ```
 
+This namespace example yaml has a number of configuration items that are worth looking through and playing with , the key highlights being:
+* The *LimitRange* for pods and container deployments in that namespace.
+* The *ResourceQuota* for things like *Storage* , *pod* totals,*cpu* and *memory* limits
+* *NetworkPolicy* that deny all by default and only allows port 3000 for this example application and also allow pods to communicate between themselves with the same label.
+
+If you experiment with the values in LimitRange against the values requested in the Helm Chart [values.yaml](nodejs-example-chart/values.yaml) you should be able to see what happens when you try to deploy it into the namespace if resource limits are not met or available.
+
 Describe namespace and view limit ranges
 ```bash
 kubectl describe namespace example-nodejs-dev-ns
@@ -263,8 +274,8 @@ To port forward from your AKS cluster and view sample application on a local bro
 ```bash
 kubectl port-forward nodejs-example-chart-deployment-55dfccccf6-wsb9d 3000
 ```
-
 again the actual deployment name will be different.
+
 You should see the remote application deployed on AKS and forwarded to your local machine http://localhost:3000
 
 ### Expose the application to the world
